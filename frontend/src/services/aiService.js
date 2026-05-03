@@ -1,7 +1,7 @@
 import api from './api'
 import { DUMMY_REKOMENDASI, DUMMY_PREDIKSI } from '../utils/dummyData'
 
-const USE_DUMMY = true
+const USE_DUMMY = false
 
 // ================================================================
 // OCR Invoice

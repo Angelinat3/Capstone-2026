@@ -5,7 +5,7 @@ import { DUMMY_USER, DUMMY_TOKEN } from '../utils/dummyData'
 // MODE DUMMY: set USE_DUMMY = true selama backend belum siap
 // Nanti tinggal ganti jadi false untuk pakai API sungguhan
 // ================================================================
-const USE_DUMMY = true
+const USE_DUMMY = false
 
 export async function loginAPI(email, password) {
   if (USE_DUMMY) {

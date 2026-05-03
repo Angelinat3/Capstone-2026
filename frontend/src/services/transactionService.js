@@ -1,7 +1,7 @@
 import api from './api'
 import { DUMMY_TRANSACTIONS, getSummary } from '../utils/dummyData'
 
-const USE_DUMMY = true
+const USE_DUMMY = false
 
 // Simulasi store lokal untuk dummy (biar bisa add/delete)
 let localTransactions = [...DUMMY_TRANSACTIONS]
