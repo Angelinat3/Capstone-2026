@@ -34,6 +34,14 @@ export function AuthProvider({ children }) {
 
   const updateUser = async (updates) => {
     try {
+      // Jika updates sudah berisi user object lengkap (dari uploadAvatar/dari API), langsung pakai
+      if (updates.id) {
+        const updated = { ...user, ...updates }
+        setUser(updated)
+        localStorage.setItem('dk_user', JSON.stringify(updated))
+        return
+      }
+      // Kalau tidak, panggil API seperti biasa
       const { user: updatedUser } = await updateMeAPI(updates)
       const updated = { ...user, ...updatedUser, ...updates }
       setUser(updated)

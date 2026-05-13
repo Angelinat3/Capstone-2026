@@ -11,9 +11,19 @@ const aiRoutes = require('./routes/aiRoutes')
 const app = express()
 
 // ── Global Middleware ──────────────────────────────────────
-app.use(helmet())
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
+}))
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }))
 app.use(express.json())
+
+// Serve static files from uploads directory with CORS headers
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
+  res.setHeader('Access-Control-Allow-Methods', 'GET')
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+  next()
+}, express.static('uploads'))
 
 // ── Health Check ──────────────────────────────────────────
 app.get('/health', (req, res) => {

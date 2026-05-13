@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { TrendingUp, TrendingDown, ArrowRight, Settings, Moon, Sun, Eye, EyeOff } from 'lucide-react'
+import { TrendingUp, TrendingDown, ArrowRight, Settings, Moon, Sun, Eye, EyeOff, BarChart3, Camera, ShoppingCart } from 'lucide-react'
 import Layout from '../components/Layout'
 import { getTransactionsAPI } from '../services/transactionService'
 import { MONTHLY_CHART_DATA, CATEGORY_CHART_DATA, CATEGORIES } from '../utils/dummyData'
@@ -38,9 +38,9 @@ export default function DashboardPage() {
   useEffect(() => {
     getTransactionsAPI().then(txs => {
       setTransactions(txs)
-      const income  = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-      const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-      const initialBalance = user?.accounts?.reduce((s, a) => s + (a.balance || 0), 0) || 0
+      const income  = txs.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0)
+      const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0)
+      const initialBalance = user?.accounts?.reduce((s, a) => s + parseFloat(a.balance || 0), 0) || 0
       setSummary({ totalIncome: income, totalExpense: expense, balance: initialBalance + income - expense })
       setLoading(false)
     })
@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
         <div className="flex items-center justify-between mb-5 relative">
           <div>
-            <p className="text-primary-200 text-sm">Selamat datang 👋</p>
+            <p className="text-primary-200 text-sm">Selamat datang</p>
             <h1 className="font-display text-xl font-bold text-white">
               {user?.name || 'Dita'}
             </h1>
@@ -119,28 +119,28 @@ export default function DashboardPage() {
         </div>
       </div>
 
-{/* ── QUICK MENU ── */}
-<div className="px-5 mt-5">
-  <div className="grid grid-cols-4 gap-3">
-    {[
-      { icon: null,  isRobot: true,  label: 'AI Dompetkuy', to: '/transaksi' },
-      { icon: '📊',  isRobot: false, label: 'Laporan',     to: '/laporan'   },
-      { icon: '📸',  isRobot: false, label: 'Upload Foto', to: '/transaksi' },
-      { icon: '🛒',  isRobot: false, label: 'Sembako',     to: '/prediksi'  },
-    ].map(m => (
-      <motion.div key={m.label} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}>
-        <Link to={m.to}
-          className="flex flex-col items-center gap-1.5 bg-white dark:bg-zinc-800 rounded-2xl py-3 border border-zinc-50 dark:border-zinc-700 shadow-soft transition">
-          {m.isRobot
-            ? <img src="/robot-ai.png" alt="AI" className="w-8 h-8 object-contain" />
-            : <span className="text-2xl">{m.icon}</span>
-          }
-          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-center leading-tight">{m.label}</span>
-        </Link>
-      </motion.div>
-    ))}
-  </div>
-</div>
+      {/* ── QUICK MENU ── */}
+      <div className="px-5 mt-5">
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { icon: null,  isRobot: true,  label: 'AI Dompetkuy', to: '/transaksi' },
+            { icon: BarChart3, isRobot: false, label: 'Laporan',     to: '/laporan'   },
+            { icon: Camera,   isRobot: false, label: 'Upload Foto', to: '/transaksi' },
+            { icon: ShoppingCart, isRobot: false, label: 'Sembako',     to: '/prediksi'  },
+          ].map(m => (
+            <motion.div key={m.label} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}>
+              <Link to={m.to}
+                className="flex flex-col items-center gap-1.5 bg-white dark:bg-zinc-800 rounded-2xl py-3 border border-zinc-50 dark:border-zinc-700 shadow-soft transition">
+                {m.isRobot
+                  ? <img src="/robot-ai.png" alt="AI" className="w-8 h-8 object-contain" />
+                  : <m.icon size={24} className="text-zinc-600 dark:text-zinc-300" />
+                }
+                <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-center leading-tight">{m.label}</span>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
 
       {/* ── CHART ── */}
       <div className="px-5 mt-5">
@@ -182,7 +182,7 @@ export default function DashboardPage() {
       <div className="px-5 mt-5">
         <div className="bg-gradient-to-r from-primary-600 to-primary-500 rounded-3xl p-4 flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl">📊</span>
+            <BarChart3 size={24} className="text-white" />
           </div>
           <div className="flex-1">
             <p className="text-white font-bold text-sm">Laporan Keuangan</p>
@@ -207,9 +207,13 @@ export default function DashboardPage() {
             const pct = Math.round((c.value/total)*100)
             return (
               <div key={c.name} className="bg-white dark:bg-zinc-800 rounded-2xl p-3.5 flex items-center gap-3 border border-zinc-50 dark:border-zinc-700">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: c.color+'18' }}>
-                  {CATEGORIES.find(x => x.label.startsWith(c.name))?.icon || '📦'}
+                  {(() => {
+                    const cat = CATEGORIES.find(x => x.label.startsWith(c.name))
+                    const Icon = cat?.icon || Package
+                    return <Icon size={18} style={{ color: c.color }} />
+                  })()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between mb-1">
@@ -241,9 +245,9 @@ export default function DashboardPage() {
             return (
               <Link key={tx.id} to="/transaksi?tab=list"
                 className={`flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition ${i < recentTx.length - 1 ? 'border-b border-zinc-50 dark:border-zinc-700' : ''}`}>
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0"
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ background: cat.color+'18' }}>
-                  {cat.icon}
+                  <cat.icon size={18} style={{ color: cat.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-zinc-800 dark:text-white truncate">{tx.note}</p>

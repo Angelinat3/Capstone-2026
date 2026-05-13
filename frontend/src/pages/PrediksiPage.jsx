@@ -2,15 +2,15 @@ import { motion } from 'framer-motion'
 import AnimatedPage from './../components/AnimatedPage'
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, Wheat, Egg, Droplets, BarChart3, MapPin, Info } from 'lucide-react'
 import Layout from '../components/Layout'
 import { getPrediksiHargaAPI } from '../services/aiService'
 import { formatRupiah } from '../utils/helpers'
 
 const KOMODITAS = [
-  { id: 'beras',         label: 'Beras',       emoji: '🌾' },
-  { id: 'telur',         label: 'Telur',        emoji: '🥚' },
-  { id: 'minyak_goreng', label: 'Minyak',       emoji: '🫙' },
+  { id: 'beras',         label: 'Beras',       icon: Wheat },
+  { id: 'telur',         label: 'Telur',        icon: Egg },
+  { id: 'minyak_goreng', label: 'Minyak',       icon: Droplets },
 ]
 
 const PriceTooltip = ({ active, payload, label }) => {
@@ -20,7 +20,7 @@ const PriceTooltip = ({ active, payload, label }) => {
     <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg border border-zinc-100 p-3 text-xs">
       <p className="font-semibold text-zinc-700 mb-1">{label}</p>
       <p className={isPrediksi ? 'text-primary-600 font-bold' : 'text-zinc-800 font-bold'}>
-        {isPrediksi ? '📊 ' : '📍 '}{formatRupiah(payload[0]?.value)}
+        {isPrediksi ? <><BarChart3 size={12} className="inline mr-1" /> </> : <><MapPin size={12} className="inline mr-1" /> </>}{formatRupiah(payload[0]?.value)}
       </p>
       {isPrediksi && <p className="text-zinc-400 mt-0.5">*Estimasi model AI</p>}
     </div>
@@ -66,7 +66,7 @@ export default function PrediksiPage() {
                   ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
                   : 'bg-white text-zinc-600 border border-zinc-200'
               }`}>
-              {k.emoji} {k.label}
+              <k.icon size={16} /> {k.label}
             </button>
           ))}
         </div>
@@ -138,8 +138,9 @@ export default function PrediksiPage() {
               </div>
             </div>
 
-            <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 text-xs text-primary-700 leading-relaxed">
-              ℹ️ Prediksi ini adalah estimasi dari model AI tim. Gunakan sebagai referensi perencanaan belanja, bukan keputusan finansial mutlak.
+            <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 text-xs text-primary-700 leading-relaxed flex items-start gap-2">
+              <Info size={14} className="flex-shrink-0 mt-0.5" />
+              Prediksi ini adalah estimasi dari model AI tim. Gunakan sebagai referensi perencanaan belanja, bukan keputusan finansial mutlak.
             </div>
           </>
         )}

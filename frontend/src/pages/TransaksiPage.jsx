@@ -1,75 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, Camera, Trash2, X, Check, Loader, Sparkles } from 'lucide-react'
+import { Send, Camera, Trash2, X, Check, Loader, Sparkles, Bot, List, DollarSign } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Layout from '../components/Layout'
 import AnimatedPage from '../components/AnimatedPage'
 import { getTransactionsAPI, addTransactionAPI, deleteTransactionAPI } from '../services/transactionService'
-import { uploadInvoiceAPI } from '../services/aiService'
+import { uploadInvoiceAPI, extractTransactionAPI } from '../services/aiService'
 import { CATEGORIES } from '../utils/dummyData'
 import { formatRupiah, formatTanggalPendek, getCategoryInfo } from '../utils/helpers'
 import { ALL_PAYMENTS, PAYMENT_GROUPS, PayLogo, getPayment } from '../utils/paymentMethods'
 
-// ── AI Extraction (dummy — ganti dengan endpoint FastAPI tim AI) ──────────
+// ── AI Extraction using Backend Gemini API ──────────
 async function extractFromAI(text) {
-  /*
-   * TODO — AI ENGINEER:
-   * Ganti fungsi ini dengan call ke endpoint model kalian:
-   *   POST /ai/extract-transaction
-   *   Body: { text: string }
-   *   Expected response: {
-   *     amount: number,
-   *     category: string,   // id dari CATEGORIES
-   *     merchant: string,
-   *     payMethod: string,  // id dari ALL_PAYMENTS
-   *     note: string,
-   *     type: 'expense' | 'income',
-   *     confidence: number
-   *   }
-   */
-  await new Promise(r => setTimeout(r, 1800))
-
-  const lower = text.toLowerCase()
-  let amount = null
-  const amtM = text.match(/(\d[\d.,]*)(\s*(?:k\b|rb\b|ribu|jt\b|juta))?/i)
-  if (amtM) {
-    let raw = amtM[1].replace(/\./g, '').replace(',', '.')
-    const unit = (amtM[2] || '').trim().toLowerCase()
-    if (/jt|juta/.test(unit)) raw = parseFloat(raw) * 1000000
-    else if (/k|rb|ribu/.test(unit)) raw = parseFloat(raw) * 1000
-    amount = Math.round(parseFloat(raw))
-  }
-
-  let category = 'lainnya'
-  if (/makan|minum|kopi|nasi|bakso|indomie|donat|roti|warung|resto|cafe|jajan|pizza|sate|ayam|mie/i.test(lower)) category = 'makanan'
-  else if (/gojek|grab|ojek|busway|krl|mrt|bensin|parkir|taxi|transjakarta|motor/i.test(lower)) category = 'transport'
-  else if (/netflix|spotify|game|bioskop|nonton|steam|disney/i.test(lower)) category = 'hiburan'
-  else if (/shopee|tokopedia|beli|belanja|kaos|baju|sepatu|tas/i.test(lower)) category = 'belanja'
-  else if (/listrik|air|internet|pulsa|tagihan|wifi|pam/i.test(lower)) category = 'tagihan'
-  else if (/obat|dokter|apotek|vitamin|klinik|rs |rumah sakit/i.test(lower)) category = 'kesehatan'
-  else if (/buku|kursus|les|kuliah|seminar|kelas/i.test(lower)) category = 'pendidikan'
-  else if (/gaji|beasiswa|freelance|cashback|bonus|transfer masuk/i.test(lower)) category = 'pemasukan'
-  const type = category === 'pemasukan' ? 'income' : 'expense'
-
-  let merchant = ''
-  const mM = text.match(/(?:di|dari|lewat|pakai|via|at|ke)\s+([A-Za-z0-9 ]+?)(?:\s+\d|[,.]|$)/i)
-  if (mM) merchant = mM[1].trim()
-
-  let payMethod = 'cash'
-  if (/gopay|go.pay/i.test(lower))         payMethod = 'gopay'
-  else if (/\bovo\b/i.test(lower))         payMethod = 'ovo'
-  else if (/\bdana\b/i.test(lower))        payMethod = 'dana'
-  else if (/shopee.?pay/i.test(lower))     payMethod = 'shopeepay'
-  else if (/\bbca\b/i.test(lower))         payMethod = 'bca'
-  else if (/\bbni\b/i.test(lower))         payMethod = 'bni'
-  else if (/mandiri/i.test(lower))         payMethod = 'mandiri'
-  else if (/\bbri\b/i.test(lower))         payMethod = 'bri'
-  else if (/\bbsi\b/i.test(lower))         payMethod = 'bsi'
-  else if (/visa|mastercard|kartu kredit|cc\b/i.test(lower)) payMethod = 'cc_visa'
-  else if (/transfer|debit|atm/i.test(lower)) payMethod = 'bni'
-  else if (/e.?wallet|ewallet/i.test(lower))  payMethod = 'gopay'
-
-  return { amount, category, merchant, payMethod, note: text, type, confidence: 0.84 }
+  const result = await extractTransactionAPI(text)
+  return result
 }
 
 // ── Extracted form component ────────────────────────────────
@@ -127,7 +71,7 @@ function ExtractedForm({ data, onSave, onCancel }) {
                     ? 'border-primary-400 bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300'
                     : 'border-transparent bg-zinc-50 dark:bg-zinc-700 text-zinc-500'
                 }`}>
-                <span className="text-base">{c.icon}</span>
+                <c.icon size={16} />
                 {c.label.split(' ')[0]}
               </button>
             ))}
@@ -217,7 +161,7 @@ function ExtractedForm({ data, onSave, onCancel }) {
 // ── Greeting ────────────────────────────────────────────────
 const AI_GREET = {
   id: 'ai-0', role: 'ai',
-  content: 'Halo Dita! 👋 Ceritain transaksimu, contoh:\n\n💬 *"beli kopi 25rb pakai GoPay"*\n💬 *"gojek ke kampus 18000 via DANA"*\n💬 *"beasiswa masuk 2.5jt"*\n\nAtau upload foto struk! 📸',
+  content: 'Halo Dita! Ceritain transaksimu, contoh:\n\n💬 *"beli kopi 25rb pakai GoPay"*\n💬 *"gojek ke kampus 18000 via DANA"*\n💬 *"beasiswa masuk 2.5jt"*\n\nAtau upload foto struk!',
 }
 
 export default function TransaksiPage() {
@@ -231,6 +175,7 @@ export default function TransaksiPage() {
   const [scanLoading, setScanLoading]   = useState(false)
   const chatEndRef = useRef(null)
   const fileRef    = useRef(null)
+  const idCounter  = useRef(1)
 
   useEffect(() => {
     getTransactionsAPI().then(txs => { setTransactions(txs); setTxLoading(false) })
@@ -240,15 +185,22 @@ export default function TransaksiPage() {
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
   }, [messages])
 
+  // Generate unique ID
+  const generateId = () => {
+    idCounter.current += 1
+    return `${Date.now()}-${idCounter.current}`
+  }
+
   // ── SEND ──────────────────────────────────────────────────
   const handleSend = async () => {
     const text = input.trim()
     if (!text || aiLoading) return
     setInput('')
-    const extractId = Date.now() + 1
+    const userId = generateId()
+    const extractId = generateId()
     setMessages(m => [
       ...m,
-      { id: Date.now(), role: 'user', content: text },
+      { id: userId, role: 'user', content: text },
       { id: extractId, role: 'ai', type: 'extracting', content: 'AI kami sedang mengekstrak kategori, merchant, nominal, dan metode pembayaran untukmu...' },
     ])
     setAiLoading(true)
@@ -289,7 +241,7 @@ export default function TransaksiPage() {
   const handleUpload = async (file) => {
     if (!file) return
     setScanLoading(true)
-    const scanId = Date.now()
+    const scanId = generateId()
     setMessages(m => [...m, { id: scanId, role: 'ai', type: 'extracting', content: '📸 Membaca foto struk dan mengekstrak data...' }])
     try {
       const result = await uploadInvoiceAPI(file)
@@ -321,11 +273,11 @@ export default function TransaksiPage() {
               <p className="text-primary-200 text-xs">Catat & pantau keuanganmu</p>
             </div>
             <div className="flex bg-white/15 rounded-xl p-0.5">
-              {[['ai', '🤖 AI DompetKuy'], ['list', '📋 Riwayat']].map(([v, l]) => (
+              {[['ai', 'AI DompetKuy'], ['list', 'Riwayat']].map(([v, l]) => (
                 <motion.button key={v} whileTap={{ scale: 0.95 }}
                   onClick={() => setTab(v)}
-                  className={`px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${tab === v ? 'bg-white text-primary-700' : 'text-white'}`}>
-                  {l}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${tab === v ? 'bg-white text-primary-700' : 'text-white'}`}>
+                  {v === 'ai' ? <Bot size={14} /> : <List size={14} />} {l}
                 </motion.button>
               ))}
             </div>
@@ -346,7 +298,7 @@ export default function TransaksiPage() {
                 <div className="w-11 h-11 flex-shrink-0 relative">
                   <img src="/robot-ai.png" alt="AI" className="w-11 h-11 object-contain"
                     onError={e => { e.target.style.display = 'none'; if(e.target.nextSibling) e.target.nextSibling.style.display = 'flex' }} />
-                  <div className="w-11 h-11 bg-primary-200 dark:bg-primary-800 rounded-2xl items-center justify-center text-xl hidden absolute inset-0">🤖</div>
+                  <div className="w-11 h-11 bg-primary-200 dark:bg-primary-800 rounded-2xl items-center justify-center hidden absolute inset-0"><Bot size={20} className="text-primary-600" /></div>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-bold text-primary-800 dark:text-primary-200">AI DompetKuy</p>
@@ -455,7 +407,9 @@ export default function TransaksiPage() {
                 </div>
               ) : transactions.length === 0 ? (
                 <div className="text-center py-16">
-                  <p className="text-4xl mb-3">💸</p>
+                  <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <DollarSign size={32} className="text-zinc-400" />
+                  </div>
                   <p className="font-semibold text-zinc-500 dark:text-zinc-400">Belum ada transaksi</p>
                 </div>
               ) : (
@@ -472,8 +426,10 @@ export default function TransaksiPage() {
                         whileHover={{ scale: 1.01, x: 2 }}
                         className="bg-white dark:bg-zinc-800 rounded-2xl px-4 py-3.5 flex items-center gap-3 border border-zinc-50 dark:border-zinc-700 group"
                       >
-                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0"
-                          style={{ background: cat.color + '18' }}>{cat.icon}</div>
+                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: cat.color+'18' }}>
+                          <cat.icon size={18} style={{ color: cat.color }} />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-zinc-800 dark:text-white truncate">{tx.note}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">

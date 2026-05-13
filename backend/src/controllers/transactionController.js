@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+const prisma = require('../config/prisma')
+const { Decimal } = require('@prisma/client/runtime/library')
 
 // GET /transactions
 exports.getAll = async (req, res, next) => {
@@ -12,14 +11,34 @@ exports.getAll = async (req, res, next) => {
     if (category) where.category = category
     if (start_date || end_date) {
       where.date = {}
-      if (start_date) where.date.gte = new Date(start_date)
-      if (end_date) where.date.lte = new Date(end_date)
+      if (start_date) {
+        const startDate = new Date(start_date)
+        if (isNaN(startDate.getTime())) {
+          return res.status(400).json({ message: 'start_date tidak valid' })
+        }
+        where.date.gte = startDate
+      }
+      if (end_date) {
+        const endDate = new Date(end_date)
+        if (isNaN(endDate.getTime())) {
+          return res.status(400).json({ message: 'end_date tidak valid' })
+        }
+        where.date.lte = endDate
+      }
+    }
+
+    let takeLimit
+    if (limit) {
+      takeLimit = parseInt(limit)
+      if (isNaN(takeLimit) || takeLimit < 1) {
+        return res.status(400).json({ message: 'limit harus berupa angka positif' })
+      }
     }
 
     const transactions = await prisma.transaction.findMany({
       where,
       orderBy: { date: 'desc' },
-      ...(limit && { take: parseInt(limit) }),
+      ...(takeLimit && { take: takeLimit }),
     })
 
     res.json(transactions)
@@ -33,10 +52,28 @@ exports.create = async (req, res, next) => {
   try {
     const { type, amount, category, note, merchant, date, payMethod } = req.body
 
+    // Sanitize amount: remove unit suffixes and convert to clean number
+    let cleanAmount = amount
+    if (typeof amount === 'string') {
+      // Remove common Indonesian unit suffixes
+      cleanAmount = amount
+        .toLowerCase()
+        .replace(/[.,\s]/g, '') // Remove dots, commas, spaces
+        .replace(/rb|ribu|k|juta|milyar/g, '') // Remove unit suffixes
+      cleanAmount = parseFloat(cleanAmount) || 0
+    } else {
+      cleanAmount = parseFloat(amount) || 0
+    }
+
+    // Validate amount is a valid positive number
+    if (isNaN(cleanAmount) || cleanAmount < 0) {
+      return res.status(400).json({ message: 'Amount harus berupa angka positif yang valid' })
+    }
+
     const transaction = await prisma.transaction.create({
       data: {
         type,
-        amount: parseInt(amount),
+        amount: new Decimal(cleanAmount),
         category,
         note: note || null,
         merchant: merchant || null,
@@ -57,15 +94,14 @@ exports.delete = async (req, res, next) => {
   try {
     const { id } = req.params
 
-    const transaction = await prisma.transaction.findFirst({
+    const result = await prisma.transaction.deleteMany({
       where: { id, userId: req.user.id },
     })
 
-    if (!transaction) {
+    if (result.count === 0) {
       return res.status(404).json({ message: 'Transaksi tidak ditemukan' })
     }
 
-    await prisma.transaction.delete({ where: { id } })
     res.json({ message: 'Transaksi berhasil dihapus' })
   } catch (err) {
     next(err)
@@ -86,28 +122,28 @@ exports.summary = async (req, res, next) => {
 
     const transactions = await prisma.transaction.findMany({ where })
 
-    let totalIncome = 0
-    let totalExpense = 0
+    let totalIncome = new Decimal(0)
+    let totalExpense = new Decimal(0)
     const categoryMap = {}
 
     for (const tx of transactions) {
       if (tx.type === 'income') {
-        totalIncome += tx.amount
+        totalIncome = totalIncome.plus(tx.amount)
       } else {
-        totalExpense += tx.amount
-        categoryMap[tx.category] = (categoryMap[tx.category] || 0) + tx.amount
+        totalExpense = totalExpense.plus(tx.amount)
+        categoryMap[tx.category] = (categoryMap[tx.category] || new Decimal(0)).plus(tx.amount)
       }
     }
 
     const byCategory = Object.entries(categoryMap).map(([category, total]) => ({
       category,
-      total,
+      total: total.toString(),
     }))
 
     res.json({
-      total_income: totalIncome,
-      total_expense: totalExpense,
-      balance: totalIncome - totalExpense,
+      total_income: totalIncome.toString(),
+      total_expense: totalExpense.toString(),
+      balance: totalIncome.minus(totalExpense).toString(),
       by_category: byCategory,
     })
   } catch (err) {

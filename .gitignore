@@ -3,5 +3,5 @@ dist
 .env
 .DS_Store
 *.local
-error.md
-prompt.md
+# error.md
+# prompt.md

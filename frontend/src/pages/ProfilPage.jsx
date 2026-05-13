@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, LogOut, User, Moon, Sun, ChevronRight, Edit2, Camera, Shield, CreditCard } from 'lucide-react'
+import { ChevronLeft, LogOut, User, Moon, Sun, ChevronRight, Edit2, Camera, Shield, CreditCard, Banknote, Circle, Building, Trash2, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import Layout from '../components/Layout'
 import AnimatedPage from '../components/AnimatedPage'
 import { staggerContainer, staggerItem } from '../utils/animations'
 import { formatRupiah } from '../utils/helpers'
+import { uploadAvatarAPI, deleteAvatarAPI } from '../services/authService'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const MenuItem = ({ icon: Icon, label, sub, onClick, danger, rightEl, color = 'text-zinc-500 dark:text-zinc-400' }) => (
   <motion.button
@@ -31,9 +34,12 @@ export default function ProfilPage() {
   const { user, logout, updateUser } = useAuth()
   const { dark, toggle } = useTheme()
   const navigate = useNavigate()
+  const fileInputRef = useRef(null)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [editName, setEditName] = useState(false)
   const [nameVal, setNameVal] = useState(user?.name || '')
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -43,6 +49,38 @@ export default function ProfilPage() {
   const saveName = () => {
     if (nameVal.trim()) updateUser({ name: nameVal.trim() })
     setEditName(false)
+  }
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      handleAvatarUpload(file)
+    }
+  }
+
+  const handleAvatarUpload = async (file) => {
+    try {
+      setUploading(true)
+      const { user: updatedUser } = await uploadAvatarAPI(file)
+      updateUser(updatedUser)
+      setShowAvatarMenu(false)
+    } catch (error) {
+      console.error('Failed to upload avatar:', error)
+      alert('Gagal mengunggah foto profil')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleAvatarDelete = async () => {
+    try {
+      const { user: updatedUser } = await deleteAvatarAPI()
+      updateUser(updatedUser)
+      setShowAvatarMenu(false)
+    } catch (error) {
+      console.error('Failed to delete avatar:', error)
+      alert('Gagal menghapus foto profil')
+    }
   }
 
   const totalSaldo = user?.accounts?.reduce((s, a) => s + (a.balance || 0), 0) || 0
@@ -72,18 +110,66 @@ export default function ProfilPage() {
               transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
               className="relative mb-3"
             >
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/30">
-                <span className="font-display text-3xl font-bold text-white">
-                  {(user?.name || 'D')[0].toUpperCase()}
-                </span>
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/30 overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl.startsWith('http') ? user.avatarUrl : `${API_BASE_URL}${user.avatarUrl}`}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="font-display text-3xl font-bold text-white">
+                    {(user?.name || 'D')[0].toUpperCase()}
+                  </span>
+                )}
               </div>
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                onClick={() => setShowAvatarMenu(!showAvatarMenu)}
                 className="absolute bottom-0 right-0 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-lg"
               >
                 <Camera size={13} className="text-primary-600" />
               </motion.button>
+
+              {/* Avatar Menu */}
+              <AnimatePresence>
+                {showAvatarMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    className="absolute top-24 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-2 min-w-[140px] z-20"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-xl transition-colors"
+                    >
+                      <Camera size={14} />
+                      {uploading ? 'Mengunggah...' : 'Ganti Foto'}
+                    </motion.button>
+                    {user?.avatarUrl && (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleAvatarDelete}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-xl transition-colors"
+                      >
+                        <Trash2 size={14} />
+                        Hapus Foto
+                      </motion.button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
 
             {editName ? (
@@ -122,7 +208,7 @@ export default function ProfilPage() {
                   <div key={i} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">
-                        {acc.name === 'Cash' ? '💵' : acc.name === 'GoPay' ? '💚' : acc.name === 'OVO' ? '💜' : acc.name === 'Dana' ? '💙' : '🏦'}
+                        {acc.name === 'Cash' ? <Banknote size={18} className="text-green-600" /> : acc.name === 'GoPay' ? <Circle size={18} className="text-green-500" /> : acc.name === 'OVO' ? <Circle size={18} className="text-purple-500" /> : acc.name === 'Dana' ? <Circle size={18} className="text-blue-500" /> : <Building size={18} className="text-zinc-600" />}
                       </span>
                       <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{acc.name}</span>
                     </div>

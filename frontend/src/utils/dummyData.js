@@ -1,6 +1,7 @@
 // ============================================================
 // DATA DUMMY — Backend Mengganti Dengan Api Call Nyata
 // ============================================================
+import { Utensils, Car, ShoppingBag, Gamepad2, Pill, BookOpen, Lightbulb, DollarSign, Package, AlertTriangle, CheckCircle, Bell, Info } from 'lucide-react'
 
 export const DUMMY_USER = {
   id: 'user-001',
@@ -12,15 +13,15 @@ export const DUMMY_USER = {
 export const DUMMY_TOKEN = 'dummy-jwt-token-dita-12345'
 
 export const CATEGORIES = [
-  { id: 'makanan',    label: 'Makanan & Minuman', icon: '🍜', color: '#f97316' },
-  { id: 'transport',  label: 'Transportasi',       icon: '🚗', color: '#3b82f6' },
-  { id: 'belanja',    label: 'Belanja',             icon: '🛍️', color: '#ec4899' },
-  { id: 'hiburan',    label: 'Hiburan',             icon: '🎮', color: '#8b5cf6' },
-  { id: 'kesehatan',  label: 'Kesehatan',           icon: '💊', color: '#ef4444' },
-  { id: 'pendidikan', label: 'Pendidikan',          icon: '📚', color: '#06b6d4' },
-  { id: 'tagihan',    label: 'Tagihan',             icon: '💡', color: '#eab308' },
-  { id: 'pemasukan',  label: 'Pemasukan',           icon: '💰', color: '#22c55e' },
-  { id: 'lainnya',    label: 'Lainnya',             icon: '📦', color: '#6b7280' },
+  { id: 'makanan',    label: 'Makanan & Minuman', icon: Utensils, color: '#f97316' },
+  { id: 'transport',  label: 'Transportasi',       icon: Car, color: '#3b82f6' },
+  { id: 'belanja',    label: 'Belanja',             icon: ShoppingBag, color: '#ec4899' },
+  { id: 'hiburan',    label: 'Hiburan',             icon: Gamepad2, color: '#8b5cf6' },
+  { id: 'kesehatan',  label: 'Kesehatan',           icon: Pill, color: '#ef4444' },
+  { id: 'pendidikan', label: 'Pendidikan',          icon: BookOpen, color: '#06b6d4' },
+  { id: 'tagihan',    label: 'Tagihan',             icon: Lightbulb, color: '#eab308' },
+  { id: 'pemasukan',  label: 'Pemasukan',           icon: DollarSign, color: '#22c55e' },
+  { id: 'lainnya',    label: 'Lainnya',             icon: Package, color: '#6b7280' },
 ]
 
 export const DUMMY_TRANSACTIONS = [
@@ -68,25 +69,25 @@ export const CATEGORY_CHART_DATA = [
 
 export const DUMMY_REKOMENDASI = [
   {
-    id: 'r001', type: 'warning', icon: '⚠️',
+    id: 'r001', type: 'warning', icon: AlertTriangle,
     title: 'Pengeluaran Makanan Meningkat',
     message: 'Pengeluaran makan & minuman kamu bulan ini Rp 255.500, naik 18% dari bulan lalu. Coba masak di rumah 2-3x seminggu untuk hemat hingga Rp 100.000.',
     category: 'makanan', savingEstimate: 100000,
   },
   {
-    id: 'r002', type: 'tip', icon: '💡',
+    id: 'r002', type: 'tip', icon: Lightbulb,
     title: 'Alokasi Tabungan Optimal',
     message: 'Dengan pemasukan Rp 3.450.000, idealnya kamu menabung minimal Rp 690.000 (20%). Saat ini kamu belum mencatat tabungan — coba buka rekening tabungan terpisah.',
     category: 'tabungan', savingEstimate: 690000,
   },
   {
-    id: 'r003', type: 'alert', icon: '🔔',
+    id: 'r003', type: 'alert', icon: Bell,
     title: 'Langganan Berulang Terdeteksi',
     message: 'Kamu berlangganan Spotify + Netflix senilai Rp 65.000/bulan. Jika berbagi akun dengan teman, bisa hemat hingga 50%.',
     category: 'hiburan', savingEstimate: 32500,
   },
   {
-    id: 'r004', type: 'good', icon: '✅',
+    id: 'r004', type: 'good', icon: CheckCircle,
     title: 'Rasio Keuangan Sehat!',
     message: 'Rasio pengeluaran vs pemasukan kamu bulan ini 54%. Kamu menghabiskan lebih sedikit dari yang dihasilkan. Pertahankan!',
     category: 'umum', savingEstimate: null,

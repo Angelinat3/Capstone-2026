@@ -1,15 +1,17 @@
 /**
  * PAYMENT METHODS — DompetKuy
- * 
+ *
  * Logo images diletakkan di: public/images/
  *   - gopay.png, ovo.png, dana.png, shopeepay.png
- *   - (bank & cash menggunakan emoji fallback)
- * 
+ *   - (bank & cash menggunakan icon fallback)
+ *
  * Digunakan di: TambahPage.jsx, TransaksiPage.jsx
  * Field yang dikirim ke backend: payMethod (string id)
  */
 
-// Helper render logo: gambar jika ada, fallback emoji
+import { Banknote, Building, Circle, CreditCard } from 'lucide-react'
+
+// Helper render logo: gambar jika ada, fallback icon
 export function PayLogo({ method, size = 24, className = '' }) {
   const IMAGE_IDS = ['gopay', 'ovo', 'dana', 'shopeepay']
   if (IMAGE_IDS.includes(method.id)) {
@@ -26,45 +28,46 @@ export function PayLogo({ method, size = 24, className = '' }) {
       />
     )
   }
-  return <span style={{ fontSize: size * 0.8, lineHeight: 1 }}>{method.icon}</span>
+  const Icon = method.icon
+  return <Icon size={size} className={className} />
 }
 
 export const PAYMENT_GROUPS = [
   {
     group: 'Tunai',
     items: [
-      { id: 'cash', label: 'Cash', icon: '💵', hasLogo: false },
+      { id: 'cash', label: 'Cash', icon: Banknote, hasLogo: false },
     ],
   },
   {
     group: 'Transfer Bank',
     items: [
-      { id: 'bni',     label: 'BNI',     icon: '🏦', hasLogo: false },
-      { id: 'bca',     label: 'BCA',     icon: '🏦', hasLogo: false },
-      { id: 'mandiri', label: 'Mandiri', icon: '🏦', hasLogo: false },
-      { id: 'bri',     label: 'BRI',     icon: '🏦', hasLogo: false },
-      { id: 'bsi',     label: 'BSI',     icon: '🏦', hasLogo: false },
-      { id: 'cimb',    label: 'CIMB',    icon: '🏦', hasLogo: false },
-      { id: 'danamon', label: 'Danamon', icon: '🏦', hasLogo: false },
-      { id: 'permata', label: 'Permata', icon: '🏦', hasLogo: false },
+      { id: 'bni',     label: 'BNI',     icon: Building, hasLogo: false },
+      { id: 'bca',     label: 'BCA',     icon: Building, hasLogo: false },
+      { id: 'mandiri', label: 'Mandiri', icon: Building, hasLogo: false },
+      { id: 'bri',     label: 'BRI',     icon: Building, hasLogo: false },
+      { id: 'bsi',     label: 'BSI',     icon: Building, hasLogo: false },
+      { id: 'cimb',    label: 'CIMB',    icon: Building, hasLogo: false },
+      { id: 'danamon', label: 'Danamon', icon: Building, hasLogo: false },
+      { id: 'permata', label: 'Permata', icon: Building, hasLogo: false },
     ],
   },
   {
     group: 'E-Wallet',
     items: [
-      { id: 'gopay',     label: 'GoPay',     icon: '💚', hasLogo: true },
-      { id: 'ovo',       label: 'OVO',       icon: '💜', hasLogo: true },
-      { id: 'dana',      label: 'DANA',      icon: '💙', hasLogo: true },
-      { id: 'shopeepay', label: 'ShopeePay', icon: '🧡', hasLogo: true },
+      { id: 'gopay',     label: 'GoPay',     icon: Circle, hasLogo: true },
+      { id: 'ovo',       label: 'OVO',       icon: Circle, hasLogo: true },
+      { id: 'dana',      label: 'DANA',      icon: Circle, hasLogo: true },
+      { id: 'shopeepay', label: 'ShopeePay', icon: Circle, hasLogo: true },
     ],
   },
   {
     group: 'Kartu Kredit',
     items: [
-      { id: 'cc_visa',       label: 'Visa',       icon: '💳', hasLogo: false },
-      { id: 'cc_mastercard', label: 'Mastercard', icon: '💳', hasLogo: false },
-      { id: 'cc_jcb',        label: 'JCB',        icon: '💳', hasLogo: false },
-      { id: 'cc_amex',       label: 'Amex',       icon: '💳', hasLogo: false },
+      { id: 'cc_visa',       label: 'Visa',       icon: CreditCard, hasLogo: false },
+      { id: 'cc_mastercard', label: 'Mastercard', icon: CreditCard, hasLogo: false },
+      { id: 'cc_jcb',        label: 'JCB',        icon: CreditCard, hasLogo: false },
+      { id: 'cc_amex',       label: 'Amex',       icon: CreditCard, hasLogo: false },
     ],
   },
 ]

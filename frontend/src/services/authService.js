@@ -14,3 +14,19 @@ export async function updateMeAPI(updates) {
   const res = await api.put('/auth/me', updates)
   return res.data
 }
+
+export async function uploadAvatarAPI(file) {
+  const formData = new FormData()
+  formData.append('avatar', file)
+  const res = await api.post('/auth/avatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return res.data
+}
+
+export async function deleteAvatarAPI() {
+  const res = await api.delete('/auth/avatar')
+  return res.data
+}

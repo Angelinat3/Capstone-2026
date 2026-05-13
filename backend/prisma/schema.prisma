@@ -7,6 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TransactionType {
+  income
+  expense
+}
+
+enum TransactionCategory {
+  makanan
+  transport
+  belanja
+  hiburan
+  kesehatan
+  pendidikan
+  tagihan
+  pemasukan
+  lainnya
+}
+
 model User {
   id           String        @id @default(uuid())
   name         String
@@ -22,17 +39,19 @@ model User {
 }
 
 model Transaction {
-  id        String   @id @default(uuid())
-  type      String
-  amount    Int
-  category  String
+  id        String              @id @default(uuid())
+  type      TransactionType
+  amount    Decimal             @db.Decimal(15, 2)
+  category  TransactionCategory
   note      String?
   merchant  String?
   date      DateTime
-  payMethod String   @map("pay_method")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String   @map("user_id")
+  payMethod String              @map("pay_method")
+  createdAt DateTime            @default(now()) @map("created_at")
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String              @map("user_id")
 
+  @@index([userId])
+  @@index([date])
   @@map("transactions")
 }

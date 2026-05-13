@@ -3,6 +3,7 @@ const { body } = require('express-validator')
 const validate = require('../middleware/validate')
 const auth = require('../middleware/auth')
 const authController = require('../controllers/authController')
+const upload = require('../config/multer')
 
 // POST /auth/register
 router.post(
@@ -44,6 +45,35 @@ router.post(
 )
 
 // PUT /auth/me
-router.put('/me', auth, authController.updateMe)
+router.put(
+  '/me',
+  auth,
+  [
+    body('name').optional().trim().notEmpty().withMessage('Nama tidak boleh kosong'),
+    body('accounts').optional().custom(value => {
+      if (value === null) return true
+      if (typeof value === 'object' && !Array.isArray(value)) return true
+      if (Array.isArray(value)) return true
+      throw new Error('Accounts harus berupa object, array, atau null')
+    }),
+  ],
+  validate,
+  authController.updateMe
+)
+
+// POST /auth/avatar
+router.post(
+  '/avatar',
+  auth,
+  upload.single('avatar'),
+  authController.uploadAvatar
+)
+
+// DELETE /auth/avatar
+router.delete(
+  '/avatar',
+  auth,
+  authController.deleteAvatar
+)
 
 module.exports = router

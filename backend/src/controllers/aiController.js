@@ -1,7 +1,5 @@
-const { PrismaClient } = require('@prisma/client')
+const prisma = require('../config/prisma')
 const aiProxy = require('../services/aiProxy')
-
-const prisma = new PrismaClient()
 
 function handleAIError(err, res, next) {
   if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') {

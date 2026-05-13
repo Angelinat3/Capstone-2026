@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const { PrismaClient } = require('@prisma/client')
+const prisma = require('../config/prisma')
 const axios = require('axios')
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env')
-
-const prisma = new PrismaClient()
+const fs = require('fs')
+const path = require('path')
 
 function signToken(user) {
   return jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
@@ -68,13 +68,10 @@ exports.forgotPassword = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
-      // Tetap return success agar tidak bocorkan info email terdaftar atau tidak
       return res.json({ message: 'Jika email terdaftar, link reset password telah dikirim' })
     }
 
-    // TODO: Implementasi kirim email reset password (nodemailer / email service)
-
-    res.json({ message: 'Jika email terdaftar, link reset password telah dikirim' })
+    res.status(501).json({ message: 'Fitur reset password belum diimplementasi' })
   } catch (err) {
     next(err)
   }
@@ -86,8 +83,18 @@ exports.updateMe = async (req, res, next) => {
     const { name, accounts } = req.body
 
     const data = {}
-    if (name !== undefined) data.name = name
-    if (accounts !== undefined) data.accounts = accounts
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        return res.status(400).json({ message: 'Nama tidak valid' })
+      }
+      data.name = name.trim()
+    }
+    if (accounts !== undefined) {
+      if (accounts !== null && typeof accounts !== 'object') {
+        return res.status(400).json({ message: 'Accounts harus berupa object, array, atau null' })
+      }
+      data.accounts = accounts
+    }
 
     const user = await prisma.user.update({
       where: { id: req.user.id },
@@ -95,6 +102,64 @@ exports.updateMe = async (req, res, next) => {
     })
 
     res.json({ user: sanitizeUser(user) })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// POST /auth/avatar
+exports.uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Tidak ada file yang diunggah' })
+    }
+
+    // Delete old avatar if exists
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } })
+    if (user.avatarUrl && user.avatarUrl.startsWith('/uploads/avatars/')) {
+      const oldAvatarPath = path.join(__dirname, '../../', user.avatarUrl)
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath)
+      }
+    }
+
+    // Update user with new avatar URL
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { avatarUrl },
+    })
+
+    res.json({ user: sanitizeUser(updatedUser) })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// DELETE /auth/avatar
+exports.deleteAvatar = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } })
+
+    if (!user.avatarUrl) {
+      return res.status(404).json({ message: 'Tidak ada foto profil yang dihapus' })
+    }
+
+    // Delete file from filesystem if it's a local file
+    if (user.avatarUrl.startsWith('/uploads/avatars/')) {
+      const avatarPath = path.join(__dirname, '../../', user.avatarUrl)
+      if (fs.existsSync(avatarPath)) {
+        fs.unlinkSync(avatarPath)
+      }
+    }
+
+    // Update user to remove avatar URL
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { avatarUrl: null },
+    })
+
+    res.json({ user: sanitizeUser(updatedUser) })
   } catch (err) {
     next(err)
   }
@@ -133,6 +198,12 @@ exports.googleLogin = async (req, res, next) => {
       user = await prisma.user.update({
         where: { email },
         data: { googleId, avatarUrl },
+      })
+    } else {
+      // Returning Google user - update avatarUrl in case it changed
+      user = await prisma.user.update({
+        where: { email },
+        data: { avatarUrl },
       })
     }
 

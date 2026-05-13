@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar, Package } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Layout from '../components/Layout'
@@ -9,6 +9,22 @@ import { CATEGORIES } from '../utils/dummyData'
 import { formatRupiah, getCategoryInfo } from '../utils/helpers'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { staggerContainer, staggerItem } from '../utils/animations'
+
+// Helper to safely parse amount (handles Decimal string from backend)
+const parseAmount = (amount) => {
+  if (typeof amount === 'number') return amount
+  if (typeof amount === 'string') return parseFloat(amount) || 0
+  return 0
+}
+
+// Helper to format date string from backend (ISO or YYYY-MM-DD)
+const toDateStr = (d) => {
+  if (!d) return ''
+  if (typeof d === 'string') {
+    return d.split('T')[0]
+  }
+  return new Date(d).toISOString().split('T')[0]
+}
 
 const PERIODS = ['Mingguan', 'Bulanan', 'Tahunan']
 
@@ -109,52 +125,52 @@ export default function LaporanPage() {
   if (period === 'Mingguan') {
     const mon = getMondayOfISOWeek(selWeek, selWYear)
     const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6)
-    filtered    = transactions.filter(t => { const d = new Date(t.date + 'T00:00:00Z'); return d >= mon && d <= sun })
+    filtered    = transactions.filter(t => { const d = new Date(toDateStr(t.date) + 'T00:00:00Z'); return d >= mon && d <= sun })
     periodLabel = `${fmtD(mon)} – ${fmtD(sun)}`
     chartData   = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map((name, i) => {
       const day = new Date(mon); day.setUTCDate(mon.getUTCDate() + i)
       const ds  = day.toISOString().split('T')[0]
-      const dayTxs = transactions.filter(t => t.date === ds)
+      const dayTxs = transactions.filter(t => toDateStr(t.date) === ds)
       return {
         name,
-        pemasukan:   dayTxs.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0),
-        pengeluaran: dayTxs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0),
+        pemasukan:   dayTxs.filter(t => t.type === 'income').reduce((s,t) => s+parseAmount(t.amount), 0),
+        pengeluaran: dayTxs.filter(t => t.type === 'expense').reduce((s,t) => s+parseAmount(t.amount), 0),
       }
     })
   }
 
   if (period === 'Bulanan') {
-    filtered    = transactions.filter(t => { const d = new Date(t.date); return d.getFullYear() === selMYear && d.getMonth() === selMonth })
+    filtered    = transactions.filter(t => { const d = new Date(toDateStr(t.date)); return d.getFullYear() === selMYear && d.getMonth() === selMonth })
     periodLabel = `${MONTH_ID[selMonth]} ${selMYear}`
     const daysInMonth = new Date(selMYear, selMonth + 1, 0).getDate()
     chartData = Array.from({ length: Math.ceil(daysInMonth / 7) }, (_, i) => {
       const start = i * 7 + 1, end = Math.min((i + 1) * 7, daysInMonth)
-      const wTxs = filtered.filter(t => { const day = new Date(t.date).getDate(); return day >= start && day <= end })
+      const wTxs = filtered.filter(t => { const day = new Date(toDateStr(t.date)).getDate(); return day >= start && day <= end })
       return {
         name: `${start}–${end}`,
-        pemasukan:   wTxs.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0),
-        pengeluaran: wTxs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0),
+        pemasukan:   wTxs.filter(t => t.type === 'income').reduce((s,t) => s+parseAmount(t.amount), 0),
+        pengeluaran: wTxs.filter(t => t.type === 'expense').reduce((s,t) => s+parseAmount(t.amount), 0),
       }
     })
   }
 
   if (period === 'Tahunan') {
-    filtered    = transactions.filter(t => new Date(t.date).getFullYear() === selYear)
+    filtered    = transactions.filter(t => new Date(toDateStr(t.date)).getFullYear() === selYear)
     periodLabel = `Tahun ${selYear}`
     chartData   = MONTH_SHORT.map((name, idx) => {
-      const mTxs = filtered.filter(t => new Date(t.date).getMonth() === idx)
+      const mTxs = filtered.filter(t => new Date(toDateStr(t.date)).getMonth() === idx)
       return {
         name,
-        pemasukan:   mTxs.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0),
-        pengeluaran: mTxs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0),
+        pemasukan:   mTxs.filter(t => t.type === 'income').reduce((s,t) => s+parseAmount(t.amount), 0),
+        pengeluaran: mTxs.filter(t => t.type === 'expense').reduce((s,t) => s+parseAmount(t.amount), 0),
       }
     })
   }
 
-  const totalIncome  = filtered.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0)
-  const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0)
+  const totalIncome  = filtered.filter(t => t.type === 'income').reduce((s,t) => s+parseAmount(t.amount), 0)
+  const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s,t) => s+parseAmount(t.amount), 0)
   const catBreakdown = CATEGORIES.filter(c => c.id !== 'pemasukan')
-    .map(c => ({ ...c, total: filtered.filter(t => t.type === 'expense' && t.category === c.id).reduce((s,t) => s+t.amount, 0) }))
+    .map(c => ({ ...c, total: filtered.filter(t => t.type === 'expense' && t.category === c.id).reduce((s,t) => s+parseAmount(t.amount), 0) }))
     .filter(x => x.total > 0).sort((a,b) => b.total - a.total)
 
   // ── Navigator per period ─────────────────────────────────
@@ -319,7 +335,7 @@ export default function LaporanPage() {
                       <motion.div key={c.id} initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }} transition={{ delay:i*0.05 }}
                         className={`flex items-center gap-3 px-4 py-3 ${i<catBreakdown.length-1?'border-b border-zinc-50 dark:border-zinc-700':''}`}>
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-                          style={{ background:c.color+'20' }}>{c.icon}</div>
+                          style={{ background:c.color+'20' }}>{c.icon && <c.icon size={18} style={{ color: c.color }} />}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between mb-1">
                             <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{c.label}</span>
@@ -352,13 +368,15 @@ export default function LaporanPage() {
                     return (
                       <div key={tx.id} className={`flex items-center gap-3 px-4 py-3 ${i<Math.min(filtered.length,30)-1?'border-b border-zinc-50 dark:border-zinc-700':''}`}>
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm flex-shrink-0"
-                          style={{ background:cat.color+'18' }}>{cat.icon}</div>
+                          style={{ background:cat.color+'18' }}>
+                          {cat.icon ? (typeof cat.icon === 'string' ? cat.icon : <cat.icon size={16} style={{ color: cat.color }} />) : <Package size={16} style={{ color: cat.color }} />}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">{tx.note}</p>
-                          <p className="text-[10px] text-zinc-400">{tx.date}</p>
+                          <p className="text-[10px] text-zinc-400">{toDateStr(tx.date)}</p>
                         </div>
                         <span className={`text-xs font-bold ${tx.type==='income'?'text-emerald-600':'text-zinc-700 dark:text-zinc-300'}`}>
-                          {tx.type==='income'?'+':'-'}{formatRupiah(tx.amount)}
+                          {tx.type==='income'?'+':'-'}{formatRupiah(parseAmount(tx.amount))}
                         </span>
                       </div>
                     )

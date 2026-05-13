@@ -4,6 +4,33 @@ import { DUMMY_REKOMENDASI, DUMMY_PREDIKSI } from '../utils/dummyData'
 const USE_DUMMY = false
 
 // ================================================================
+// Extract Transaction from Text
+// Backend akan route ke Gemini atau FastAPI (tim AI) berdasarkan config
+// Endpoint backend: POST /ai/extract-transaction
+// 
+// NOTE: Jika tim AI ingin ganti endpoint ke FastAPI langsung,
+// ganti url di bawah jadi: 'http://localhost:8000/ai/extract-transaction'
+// ================================================================
+export async function extractTransactionAPI(text) {
+  if (USE_DUMMY) {
+    // Simulasi hasil ekstrak dari text
+    await new Promise(r => setTimeout(r, 1500))
+    return {
+      amount:     25000,
+      category:   'makanan',
+      merchant:   'Kopi Kenangan',
+      payMethod:  'gopay',
+      note:       text,
+      type:       'expense',
+      confidence: 0.92,
+    }
+  }
+  // Backend akan route ke Gemini atau FastAPI berdasarkan AI_PROVIDER config
+  const res = await api.post('/ai/extract-transaction', { text })
+  return res.data
+}
+
+// ================================================================
 // OCR Invoice
 // ================================================================
 export async function uploadInvoiceAPI(file) {

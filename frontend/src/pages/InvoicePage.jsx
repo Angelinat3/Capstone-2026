@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Upload, FileImage, CheckCircle, Plus, RefreshCw } from 'lucide-react'
+import { Upload, FileImage, CheckCircle, Plus, RefreshCw, Bot, AlertTriangle } from 'lucide-react'
 import Layout from '../components/Layout'
 import { uploadInvoiceAPI } from '../services/aiService'
 import { addTransactionAPI } from '../services/transactionService'
@@ -132,8 +132,8 @@ export default function InvoicePage() {
             </button>
 
             {loading && (
-              <p className="text-center text-xs text-surface-400 mt-3 animate-pulse">
-                🤖 AI sedang membaca struk kamu...
+              <p className="text-center text-xs text-surface-400 mt-3 animate-pulse flex items-center justify-center gap-1">
+                <Bot size={12} className="animate-pulse" /> AI sedang membaca struk kamu...
               </p>
             )}
           </div>
@@ -187,8 +187,9 @@ export default function InvoicePage() {
                   className="w-full px-4 py-2.5 rounded-xl border border-surface-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
               </div>
 
-              <p className="text-xs text-surface-400 bg-amber-50 rounded-xl p-3">
-                ⚠️ Harap periksa kembali hasil pembacaan AI sebelum disimpan. Koreksi jika ada yang kurang tepat.
+              <p className="text-xs text-surface-400 bg-amber-50 rounded-xl p-3 flex items-start gap-2">
+                <AlertTriangle size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                Harap periksa kembali hasil pembacaan AI sebelum disimpan. Koreksi jika ada yang kurang tepat.
               </p>
             </div>
 

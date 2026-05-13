@@ -13,6 +13,12 @@ function auth(req, res, next) {
     req.user = { id: decoded.id, email: decoded.email }
     next()
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token sudah expired' })
+    }
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Token tidak valid' })
+    }
     return res.status(401).json({ message: 'Token tidak valid atau sudah expired' })
   }
 }

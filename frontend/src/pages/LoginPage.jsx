@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { loginAPI } from '../services/authService'
 import { useGoogleLogin } from '@react-oauth/google'
-import { Eye, EyeOff, ArrowRight, Wallet } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Wallet, Bot, FileText, BarChart3, ShoppingCart } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('')
@@ -110,8 +110,15 @@ export default function LoginPage() {
 
           {/* Feature pills */}
           <div className="flex flex-wrap gap-2 mt-6 justify-center">
-            {['🤖 AI Catat Transaksi','🧾 Scan Invoice','📊 Laporan Otomatis','🛒 Prediksi Sembako'].map(f => (
-              <span key={f} className="bg-white/15 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full font-medium">{f}</span>
+            {[
+              { icon: Bot, label: 'AI Catat Transaksi' },
+              { icon: FileText, label: 'Scan Invoice' },
+              { icon: BarChart3, label: 'Laporan Otomatis' },
+              { icon: ShoppingCart, label: 'Prediksi Sembako' }
+            ].map(f => (
+              <span key={f.label} className="bg-white/15 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+                <f.icon size={12} /> {f.label}
+              </span>
             ))}
           </div>
         </div>
@@ -137,7 +144,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm mx-auto lg:max-w-md">
           <h2 className="font-display text-2xl font-bold text-zinc-900 dark:text-white mb-1">Masuk ke Akun</h2>
           <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-8">
-            Selamat datang di <span className="text-primary-600 font-semibold">DompetKuy</span> 👋
+            Selamat datang di <span className="text-primary-600 font-semibold">DompetKuy</span>
           </p>
 
           {error && (

@@ -146,7 +146,7 @@ export default function TambahPage() {
                     ? 'border-primary-400 bg-primary-50 dark:bg-primary-950'
                     : 'border-transparent bg-zinc-50 dark:bg-zinc-800'
                 }`}>
-                <span className="text-xl">{c.icon}</span>
+                <span className="text-xl"><c.icon /></span>
                 <span className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 leading-tight text-center">{c.label.split(' ')[0]}</span>
               </motion.button>
             ))}
