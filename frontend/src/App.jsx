@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -42,12 +43,14 @@ function AnimatedRoutes() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AnimatedRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   )
 }

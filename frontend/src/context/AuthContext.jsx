@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { updateMeAPI } from '../services/authService'
 
 const AuthContext = createContext(null)
 
@@ -31,10 +32,16 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('dk_token')
   }
 
-  const updateUser = (updates) => {
-    const updated = { ...user, ...updates }
-    setUser(updated)
-    localStorage.setItem('dk_user', JSON.stringify(updated))
+  const updateUser = async (updates) => {
+    try {
+      const { user: updatedUser } = await updateMeAPI(updates)
+      const updated = { ...user, ...updatedUser, ...updates }
+      setUser(updated)
+      localStorage.setItem('dk_user', JSON.stringify(updated))
+    } catch (error) {
+      console.error('Failed to update user:', error)
+      throw error
+    }
   }
 
   return (

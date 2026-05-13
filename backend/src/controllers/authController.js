@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { PrismaClient } = require('@prisma/client')
+const axios = require('axios')
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env')
 
 const prisma = new PrismaClient()
@@ -95,6 +96,50 @@ exports.updateMe = async (req, res, next) => {
 
     res.json({ user: sanitizeUser(user) })
   } catch (err) {
+    next(err)
+  }
+}
+
+// POST /auth/google
+exports.googleLogin = async (req, res, next) => {
+  try {
+    const { access_token } = req.body
+
+    // Fetch user info from Google using access token
+    const response = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+    })
+
+    const { email, name, sub: googleId, picture: avatarUrl } = response.data
+
+    // Check if user exists
+    let user = await prisma.user.findUnique({ where: { email } })
+
+    if (!user) {
+      // Create new user if doesn't exist
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          googleId,
+          avatarUrl,
+          password: '', // No password for Google users
+        },
+      })
+    } else if (!user.googleId) {
+      // Link Google account to existing user
+      user = await prisma.user.update({
+        where: { email },
+        data: { googleId, avatarUrl },
+      })
+    }
+
+    const token = signToken(user)
+    res.json({ token, user: sanitizeUser(user) })
+  } catch (err) {
+    console.error('Google login error:', err)
     next(err)
   }
 }

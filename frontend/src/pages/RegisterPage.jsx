@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { registerAPI } from '../services/authService'
+import { useGoogleLogin } from '@react-oauth/google'
 import { Eye, EyeOff, ArrowRight, Wallet, ChevronLeft } from 'lucide-react'
 
 export default function RegisterPage() {
@@ -14,6 +15,39 @@ export default function RegisterPage() {
   const { login } = useAuth()
   const navigate  = useNavigate()
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true)
+        setError('')
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ access_token: tokenResponse.access_token }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Google login failed')
+        }
+
+        login(data.user, data.token)
+        navigate('/setup-saldo')
+      } catch (err) {
+        setError(err.message || 'Google login gagal')
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => {
+      setError('Google login dibatalkan atau gagal')
+    },
+  })
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (password.length < 6) { setError('Password minimal 6 karakter'); return }
@@ -22,7 +56,7 @@ export default function RegisterPage() {
     try {
       const { user, token } = await registerAPI(name, email, password)
       login(user, token)
-      navigate('/setup-saldo')          // ← arahkan ke setup saldo awal
+      navigate('/setup-saldo')
     } catch (err) {
       setError(err.message || 'Gagal mendaftar')
     } finally {
@@ -31,7 +65,7 @@ export default function RegisterPage() {
   }
 
   const handleGoogle = () => {
-    alert('Google Sign-In: Hubungkan backend endpoint POST /auth/google.\nLihat panduan di LoginPage.jsx.')
+    googleLogin()
   }
 
   return (

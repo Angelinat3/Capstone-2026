@@ -40,10 +40,11 @@ export default function DashboardPage() {
       setTransactions(txs)
       const income  = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
       const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-      setSummary({ totalIncome: income, totalExpense: expense, balance: income - expense })
+      const initialBalance = user?.accounts?.reduce((s, a) => s + (a.balance || 0), 0) || 0
+      setSummary({ totalIncome: income, totalExpense: expense, balance: initialBalance + income - expense })
       setLoading(false)
     })
-  }, [])
+  }, [user])
 
   const recentTx = transactions.slice(0, 5)
 

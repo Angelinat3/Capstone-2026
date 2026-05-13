@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { loginAPI } from '../services/authService'
+import { useGoogleLogin } from '@react-oauth/google'
 import { Eye, EyeOff, ArrowRight, Wallet } from 'lucide-react'
 
 export default function LoginPage() {
@@ -12,6 +13,40 @@ export default function LoginPage() {
   const [error, setError]       = useState('')
   const { login } = useAuth()
   const navigate  = useNavigate()
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true)
+        setError('')
+        
+        // Send access_token to backend
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ access_token: tokenResponse.access_token }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Google login failed')
+        }
+
+        login(data.user, data.token)
+        navigate('/')
+      } catch (err) {
+        setError(err.message || 'Google login gagal')
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => {
+      setError('Google login dibatalkan atau gagal')
+    },
+  })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -29,13 +64,7 @@ export default function LoginPage() {
   }
 
   const handleGoogleLogin = () => {
-    // TODO Backend: Implementasi Google OAuth
-    // 1. Tambahkan package: npm install @react-oauth/google
-    // 2. Wrap App dengan <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
-    // 3. Gunakan useGoogleLogin() hook dari @react-oauth/google
-    // 4. Kirim access_token ke backend endpoint: POST /auth/google
-    // 5. Backend validasi dengan Google API dan return JWT
-    alert('Google Sign-In: Hubungkan backend endpoint POST /auth/google dahulu.\nLihat komentar di LoginPage.jsx untuk panduan implementasi.')
+    googleLogin()
   }
 
   return (
@@ -168,10 +197,6 @@ export default function LoginPage() {
             Belum punya akun?{' '}
             <Link to="/register" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">Daftar gratis</Link>
           </p>
-
-          <div className="mt-6 p-3 bg-primary-50 dark:bg-primary-950 rounded-2xl text-xs text-primary-700 dark:text-primary-300 text-center">
-            Mode Demo: masukkan email & password apa pun
-          </div>
         </div>
       </div>
     </div>

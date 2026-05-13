@@ -8,4 +8,6 @@ module.exports = {
   AI_SERVICE_URL: process.env.AI_SERVICE_URL || 'http://localhost:8000',
   AI_SERVICE_TIMEOUT: parseInt(process.env.AI_SERVICE_TIMEOUT) || 30000,
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
 }

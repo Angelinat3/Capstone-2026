@@ -35,6 +35,14 @@ router.post(
   authController.forgotPassword
 )
 
+// POST /auth/google
+router.post(
+  '/google',
+  [body('access_token').notEmpty().withMessage('Access token wajib diisi')],
+  validate,
+  authController.googleLogin
+)
+
 // PUT /auth/me
 router.put('/me', auth, authController.updateMe)
 

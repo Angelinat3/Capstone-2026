@@ -28,18 +28,27 @@ export default function SetupSaldoPage() {
 
   const totalSaldo = accounts.reduce((s, a) => s + (parseFloat(a.balance) || 0), 0)
 
-  const handleSave = () => {
-    const saldoData = accounts.map(a => ({
-      name: a.name,
-      balance: parseFloat(a.balance) || 0,
-    }))
-    updateUser({ accounts: saldoData, saldoSetupDone: true })
-    navigate('/')
+  const handleSave = async () => {
+    try {
+      const saldoData = accounts.map(a => ({
+        name: a.name,
+        balance: parseFloat(a.balance) || 0,
+      }))
+      await updateUser({ accounts: saldoData, saldoSetupDone: true })
+      navigate('/')
+    } catch (error) {
+      console.error('Failed to save saldo:', error)
+      alert('Gagal menyimpan saldo. Silakan coba lagi.')
+    }
   }
 
-  const handleSkip = () => {
-    updateUser({ saldoSetupDone: true })
-    navigate('/')
+  const handleSkip = async () => {
+    try {
+      await updateUser({ saldoSetupDone: true })
+      navigate('/')
+    } catch (error) {
+      console.error('Failed to skip setup:', error)
+    }
   }
 
   return (
