@@ -13,7 +13,7 @@ const VALID_PAYMENT_METHODS = [
   'bca', 'bni', 'mandiri', 'bri', 'bsi', 'cc_visa'
 ]
 
-// Models to try in order (fallback mechanism)
+// Models to try
 const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
 
 // Initialize Gemini client
