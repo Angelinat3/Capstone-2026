@@ -29,13 +29,14 @@ export default function RegisterPage() {
           body: JSON.stringify({ access_token: tokenResponse.access_token }),
         })
 
-        const data = await response.json()
+        const json = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.message || 'Google login failed')
+          throw new Error(json.message || 'Google login failed')
         }
 
-        login(data.user, data.token)
+        const payload = json.data ?? json
+        login(payload.user, payload.token)
         navigate('/setup-saldo')
       } catch (err) {
         setError(err.message || 'Google login gagal')

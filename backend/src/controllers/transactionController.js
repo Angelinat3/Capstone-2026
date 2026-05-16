@@ -1,54 +1,33 @@
-const prisma = require('../config/prisma')
-const { Decimal } = require('@prisma/client/runtime/library')
+import { Decimal } from '@prisma/client/runtime/library.js'
+import transactionRepository from '../repositories/transactionRepository.js'
+import InvariantError from '../exceptions/InvariantError.js'
 
 // GET /transactions
-exports.getAll = async (req, res, next) => {
+export const getAll = async (req, res, next) => {
   try {
     const { type, category, start_date, end_date, limit } = req.query
 
-    const where = { userId: req.user.id }
-    if (type) where.type = type
-    if (category) where.category = category
-    if (start_date || end_date) {
-      where.date = {}
-      if (start_date) {
-        const startDate = new Date(start_date)
-        if (isNaN(startDate.getTime())) {
-          return res.status(400).json({ message: 'start_date tidak valid' })
-        }
-        where.date.gte = startDate
-      }
-      if (end_date) {
-        const endDate = new Date(end_date)
-        if (isNaN(endDate.getTime())) {
-          return res.status(400).json({ message: 'end_date tidak valid' })
-        }
-        where.date.lte = endDate
-      }
-    }
+    const filters = { userId: req.user.id }
+    if (type) filters.type = type
+    if (category) filters.category = category
+    if (start_date) filters.start_date = start_date
+    if (end_date) filters.end_date = end_date
+    if (limit) filters.limit = limit
 
-    let takeLimit
-    if (limit) {
-      takeLimit = parseInt(limit)
-      if (isNaN(takeLimit) || takeLimit < 1) {
-        return res.status(400).json({ message: 'limit harus berupa angka positif' })
-      }
-    }
+    const transactions = await transactionRepository.findAll(req.user.id, filters)
 
-    const transactions = await prisma.transaction.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      ...(takeLimit && { take: takeLimit }),
+    res.json({
+      status: 'success',
+      message: 'Transaksi berhasil diambil',
+      data: { transactions }
     })
-
-    res.json(transactions)
   } catch (err) {
     next(err)
   }
 }
 
 // POST /transactions
-exports.create = async (req, res, next) => {
+export const create = async (req, res, next) => {
   try {
     const { type, amount, category, note, merchant, date, payMethod } = req.body
 
@@ -67,60 +46,62 @@ exports.create = async (req, res, next) => {
 
     // Validate amount is a valid positive number
     if (isNaN(cleanAmount) || cleanAmount < 0) {
-      return res.status(400).json({ message: 'Amount harus berupa angka positif yang valid' })
+      throw new InvariantError('Amount harus berupa angka positif yang valid')
     }
 
-    const transaction = await prisma.transaction.create({
-      data: {
-        type,
-        amount: new Decimal(cleanAmount),
-        category,
-        note: note || null,
-        merchant: merchant || null,
-        date: new Date(date),
-        payMethod: payMethod || 'cash',
-        userId: req.user.id,
-      },
+    const transaction = await transactionRepository.create({
+      type,
+      amount: new Decimal(cleanAmount),
+      category,
+      note: note || null,
+      merchant: merchant || null,
+      date: new Date(date),
+      payMethod: payMethod || 'cash',
+      userId: req.user.id,
     })
 
-    res.status(201).json(transaction)
+    res.status(201).json({
+      status: 'success',
+      message: 'Transaksi berhasil dibuat',
+      data: { transaction }
+    })
   } catch (err) {
     next(err)
   }
 }
 
 // DELETE /transactions/:id
-exports.delete = async (req, res, next) => {
+export const deleteTransaction = async (req, res, next) => {
   try {
     const { id } = req.params
 
-    const result = await prisma.transaction.deleteMany({
-      where: { id, userId: req.user.id },
+    await transactionRepository.delete(id, req.user.id)
+
+    res.json({
+      status: 'success',
+      message: 'Transaksi berhasil dihapus'
     })
-
-    if (result.count === 0) {
-      return res.status(404).json({ message: 'Transaksi tidak ditemukan' })
-    }
-
-    res.json({ message: 'Transaksi berhasil dihapus' })
   } catch (err) {
     next(err)
   }
 }
 
 // GET /transactions/summary
-exports.summary = async (req, res, next) => {
+export const summary = async (req, res, next) => {
   try {
     const { month, year } = req.query
 
-    const where = { userId: req.user.id }
+    let startDate, endDate
     if (month && year) {
-      const start = new Date(parseInt(year), parseInt(month) - 1, 1)
-      const end = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59)
-      where.date = { gte: start, lte: end }
+      startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
+      endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59)
     }
 
-    const transactions = await prisma.transaction.findMany({ where })
+    const transactions = await transactionRepository.findByDateRange(
+      req.user.id,
+      startDate,
+      endDate
+    )
 
     let totalIncome = new Decimal(0)
     let totalExpense = new Decimal(0)
@@ -141,10 +122,14 @@ exports.summary = async (req, res, next) => {
     }))
 
     res.json({
-      total_income: totalIncome.toString(),
-      total_expense: totalExpense.toString(),
-      balance: totalIncome.minus(totalExpense).toString(),
-      by_category: byCategory,
+      status: 'success',
+      message: 'Ringkasan transaksi berhasil diambil',
+      data: {
+        total_income: totalIncome.toString(),
+        total_expense: totalExpense.toString(),
+        balance: totalIncome.minus(totalExpense).toString(),
+        by_category: byCategory,
+      }
     })
   } catch (err) {
     next(err)

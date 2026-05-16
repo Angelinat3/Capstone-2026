@@ -1,4 +1,5 @@
-require('dotenv').config()
+import dotenv from 'dotenv'
+dotenv.config()
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required')
@@ -9,24 +10,32 @@ if (!process.env.DATABASE_URL) {
 }
 
 // AI Provider Selection: 'gemini' | 'fastapi' | 'auto'
-// - 'gemini': Always use Google Gemini API
-// - 'fastapi': Always use external AI Service (FastAPI dari tim AI)
-// - 'auto': Use Gemini if GEMINI_API_KEY exists, otherwise fallback to FastAPI
-const AI_PROVIDER = process.env.AI_PROVIDER || 'auto'
+export const AI_PROVIDER = process.env.AI_PROVIDER || 'auto'
 
-module.exports = {
-  PORT: process.env.PORT || 3000,
-  DATABASE_URL: process.env.DATABASE_URL,
-  JWT_SECRET: process.env.JWT_SECRET,
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
-  // AI Service (FastAPI dari tim AI) — dipakai jika AI_PROVIDER='fastapi' atau mode 'auto' tanpa Gemini key
-  AI_SERVICE_URL: process.env.AI_SERVICE_URL || 'http://localhost:8000',
-  AI_SERVICE_TIMEOUT: parseInt(process.env.AI_SERVICE_TIMEOUT) || 30000,
-  // AI Provider Configuration
+export const PORT = process.env.PORT || 3000
+export const DATABASE_URL = process.env.DATABASE_URL
+export const JWT_SECRET = process.env.JWT_SECRET
+export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
+export const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000'
+export const AI_SERVICE_TIMEOUT =
+  parseInt(process.env.AI_SERVICE_TIMEOUT, 10) || 30000
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+export const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
+
+const env = {
+  PORT,
+  DATABASE_URL,
+  JWT_SECRET,
+  JWT_EXPIRES_IN,
+  AI_SERVICE_URL,
+  AI_SERVICE_TIMEOUT,
   AI_PROVIDER,
-  // Google Gemini API — dipakai jika AI_PROVIDER='gemini' atau mode 'auto' dengan Gemini key
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GEMINI_API_KEY,
+  CORS_ORIGIN,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
 }
+
+export default env

@@ -1,5 +1,5 @@
-const { GoogleGenAI } = require('@google/genai')
-const { GEMINI_API_KEY } = require('../config/env')
+import { GoogleGenAI } from '@google/genai'
+import { GEMINI_API_KEY } from '../config/env.js'
 
 // Valid categories for transaction extraction
 const VALID_CATEGORIES = [
@@ -290,7 +290,7 @@ async function ocrInvoice(fileBuffer, filename, mimetype) {
   }
 }
 
-module.exports = {
+export {
   extractTransaction,
   getRecommendations,
   ocrInvoice

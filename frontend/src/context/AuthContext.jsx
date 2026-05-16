@@ -9,16 +9,39 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const savedUser  = localStorage.getItem('dk_user')
+    const savedUser = localStorage.getItem('dk_user')
     const savedToken = localStorage.getItem('dk_token')
-    if (savedUser && savedToken) {
-      setUser(JSON.parse(savedUser))
-      setToken(savedToken)
+    const badToken =
+      !savedToken ||
+      savedToken === 'undefined' ||
+      savedToken === 'null'
+
+    if (savedUser && savedUser !== 'undefined' && !badToken) {
+      try {
+        const parsed = JSON.parse(savedUser)
+        if (parsed && typeof parsed === 'object' && parsed.id) {
+          setUser(parsed)
+          setToken(savedToken)
+        } else {
+          localStorage.removeItem('dk_user')
+          localStorage.removeItem('dk_token')
+        }
+      } catch {
+        localStorage.removeItem('dk_user')
+        localStorage.removeItem('dk_token')
+      }
+    } else if (badToken || savedUser === 'undefined') {
+      localStorage.removeItem('dk_user')
+      localStorage.removeItem('dk_token')
     }
     setLoading(false)
   }, [])
 
   const login = (userData, tokenValue) => {
+    if (!userData?.id || !tokenValue || tokenValue === 'undefined') {
+      console.error('[Auth] login dipanggil tanpa user/token valid')
+      return
+    }
     setUser(userData)
     setToken(tokenValue)
     localStorage.setItem('dk_user', JSON.stringify(userData))

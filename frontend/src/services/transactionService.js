@@ -3,8 +3,16 @@ import { DUMMY_TRANSACTIONS, getSummary } from '../utils/dummyData'
 
 const USE_DUMMY = false
 
-// Simulasi store lokal untuk dummy (biar bisa add/delete)
 let localTransactions = [...DUMMY_TRANSACTIONS]
+
+/** Sama dengan backend: { status, message, data } */
+function unwrapSuccess(res) {
+  const body = res?.data
+  if (body && typeof body === 'object' && body.data !== undefined) {
+    return body.data
+  }
+  return body
+}
 
 export async function getTransactionsAPI() {
   if (USE_DUMMY) {
@@ -12,22 +20,25 @@ export async function getTransactionsAPI() {
     return [...localTransactions].sort((a, b) => new Date(b.date) - new Date(a.date))
   }
   const res = await api.get('/transactions')
-  return res.data
+  const data = unwrapSuccess(res)
+  if (Array.isArray(data)) return data
+  return data?.transactions ?? []
 }
 
-export async function addTransactionAPI(data) {
+export async function addTransactionAPI(payload) {
   if (USE_DUMMY) {
     await new Promise(r => setTimeout(r, 500))
     const newTx = {
       id: 't' + Date.now(),
-      ...data,
-      date: data.date || new Date().toISOString().split('T')[0],
+      ...payload,
+      date: payload.date || new Date().toISOString().split('T')[0],
     }
     localTransactions.unshift(newTx)
     return newTx
   }
-  const res = await api.post('/transactions', data)
-  return res.data
+  const res = await api.post('/transactions', payload)
+  const inner = unwrapSuccess(res)
+  return inner?.transaction ?? inner
 }
 
 export async function deleteTransactionAPI(id) {
@@ -37,7 +48,7 @@ export async function deleteTransactionAPI(id) {
     return { message: 'Berhasil dihapus' }
   }
   const res = await api.delete(`/transactions/${id}`)
-  return res.data
+  return unwrapSuccess(res)
 }
 
 export async function getSummaryAPI() {
@@ -46,5 +57,5 @@ export async function getSummaryAPI() {
     return getSummary(localTransactions)
   }
   const res = await api.get('/transactions/summary')
-  return res.data
+  return unwrapSuccess(res)
 }

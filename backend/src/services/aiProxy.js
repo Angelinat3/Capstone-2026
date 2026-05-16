@@ -1,7 +1,7 @@
-const axios = require('axios')
-const FormData = require('form-data')
-const { AI_SERVICE_URL, AI_SERVICE_TIMEOUT, GEMINI_API_KEY, AI_PROVIDER } = require('../config/env')
-const geminiService = require('./geminiService')
+import axios from 'axios'
+import FormData from 'form-data'
+import { AI_SERVICE_URL, AI_SERVICE_TIMEOUT, GEMINI_API_KEY, AI_PROVIDER } from '../config/env.js'
+import * as geminiService from './geminiService.js'
 
 const aiClient = axios.create({
   baseURL: AI_SERVICE_URL,
@@ -159,7 +159,7 @@ async function getPrediction(commodity) {
   }
 }
 
-module.exports = {
+export {
   extractTransaction,
   ocrInvoice,
   getRecommendations,

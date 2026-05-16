@@ -1,15 +1,10 @@
-const router = require('express').Router()
-const { body } = require('express-validator')
-const validate = require('../middleware/validate')
-const auth = require('../middleware/auth')
-const txController = require('../controllers/transactionController')
+import express from 'express'
+import { createTransactionSchema, getTransactionsSchema, summarySchema } from '../validators/transactionValidator.js'
+import validate from '../middleware/validate.js'
+import auth from '../middleware/auth.js'
+import * as txController from '../controllers/transactionController.js'
 
-const VALID_CATEGORIES = [
-  'makanan', 'transport', 'belanja', 'hiburan',
-  'kesehatan', 'pendidikan', 'tagihan', 'pemasukan', 'lainnya',
-]
-
-const VALID_TYPES = ['income', 'expense']
+const router = express.Router()
 
 // GET /transactions
 router.get('/', auth, txController.getAll)
@@ -18,20 +13,14 @@ router.get('/', auth, txController.getAll)
 router.post(
   '/',
   auth,
-  [
-    body('type').isIn(VALID_TYPES).withMessage('Type harus income atau expense'),
-    body('amount').isInt({ min: 1 }).withMessage('Amount harus angka positif'),
-    body('category').isIn(VALID_CATEGORIES).withMessage('Category tidak valid'),
-    body('date').notEmpty().withMessage('Tanggal wajib diisi'),
-  ],
-  validate,
+  validate(createTransactionSchema),
   txController.create
 )
 
 // DELETE /transactions/:id
-router.delete('/:id', auth, txController.delete)
+router.delete('/:id', auth, txController.deleteTransaction)
 
 // GET /transactions/summary
-router.get('/summary', auth, txController.summary)
+router.get('/summary', auth, validate(summarySchema, 'query'), txController.summary)
 
-module.exports = router
+export default router

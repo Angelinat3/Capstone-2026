@@ -2,6 +2,7 @@
   "name": "dompetkuy-backend",
   "version": "1.0.0",
   "description": "DompetKuy Backend API — Express.js + Prisma + PostgreSQL",
+  "type": "module",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
@@ -22,6 +23,7 @@
     "form-data": "^4.0.1",
     "google-auth-library": "^10.6.2",
     "helmet": "^8.0.0",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1"
   },

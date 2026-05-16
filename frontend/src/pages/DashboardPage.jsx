@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { TrendingUp, TrendingDown, ArrowRight, Settings, Moon, Sun, Eye, EyeOff, BarChart3, Camera, ShoppingCart } from 'lucide-react'
+import { TrendingUp, TrendingDown, ArrowRight, Settings, Moon, Sun, Eye, EyeOff, BarChart3, Camera, ShoppingCart, Package } from 'lucide-react'
 import Layout from '../components/Layout'
 import { getTransactionsAPI } from '../services/transactionService'
 import { MONTHLY_CHART_DATA, CATEGORY_CHART_DATA, CATEGORIES } from '../utils/dummyData'
@@ -36,14 +36,30 @@ export default function DashboardPage() {
   const [hideBalance, setHideBalance] = useState(false)
 
   useEffect(() => {
-    getTransactionsAPI().then(txs => {
-      setTransactions(txs)
-      const income  = txs.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0)
-      const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0)
-      const initialBalance = user?.accounts?.reduce((s, a) => s + parseFloat(a.balance || 0), 0) || 0
-      setSummary({ totalIncome: income, totalExpense: expense, balance: initialBalance + income - expense })
-      setLoading(false)
-    })
+    let cancelled = false
+    setLoading(true)
+    getTransactionsAPI()
+      .then(txs => {
+        if (cancelled) return
+        const list = Array.isArray(txs) ? txs : []
+        setTransactions(list)
+        const income = list.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0)
+        const expense = list.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0)
+        const initialBalance = user?.accounts?.reduce((s, a) => s + parseFloat(a.balance || 0), 0) || 0
+        setSummary({ totalIncome: income, totalExpense: expense, balance: initialBalance + income - expense })
+      })
+      .catch(() => {
+        if (cancelled) return
+        setTransactions([])
+        const initialBalance = user?.accounts?.reduce((s, a) => s + parseFloat(a.balance || 0), 0) || 0
+        setSummary({ totalIncome: 0, totalExpense: 0, balance: initialBalance })
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [user])
 
   const recentTx = transactions.slice(0, 5)
@@ -242,12 +258,13 @@ export default function DashboardPage() {
         <div className="bg-white dark:bg-zinc-800 rounded-3xl border border-zinc-50 dark:border-zinc-700 overflow-hidden">
           {recentTx.map((tx, i) => {
             const cat = getCategoryInfo(tx.category, CATEGORIES)
+            const CatIcon = cat.icon
             return (
               <Link key={tx.id} to="/transaksi?tab=list"
                 className={`flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition ${i < recentTx.length - 1 ? 'border-b border-zinc-50 dark:border-zinc-700' : ''}`}>
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ background: cat.color+'18' }}>
-                  <cat.icon size={18} style={{ color: cat.color }} />
+                  <CatIcon size={18} style={{ color: cat.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-zinc-800 dark:text-white truncate">{tx.note}</p>

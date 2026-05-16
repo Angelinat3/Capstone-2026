@@ -1,10 +1,11 @@
-const jwt = require('jsonwebtoken')
-const { JWT_SECRET } = require('../config/env')
+import jwt from 'jsonwebtoken'
+import {JWT_SECRET}  from '../config/env.js'
+import AuthenticationError from '../exceptions/AuthenticationError.js'
 
 function auth(req, res, next) {
   const header = req.headers.authorization
   if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Token tidak ditemukan' })
+    throw new AuthenticationError('Token tidak ditemukan')
   }
 
   const token = header.split(' ')[1]
@@ -14,13 +15,13 @@ function auth(req, res, next) {
     next()
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token sudah expired' })
+      throw new AuthenticationError('Token sudah expired')
     }
     if (err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Token tidak valid' })
+      throw new AuthenticationError('Token tidak valid')
     }
-    return res.status(401).json({ message: 'Token tidak valid atau sudah expired' })
+    throw new AuthenticationError('Token tidak valid atau sudah expired')
   }
 }
 
-module.exports = auth
+export default auth

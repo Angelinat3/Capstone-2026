@@ -1,14 +1,21 @@
-const { validationResult } = require('express-validator')
+import Joi from 'joi'
+import InvariantError from '../exceptions/InvariantError.js'
 
-function validate(req, res, next) {
-  const errors = validationResult(req)
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      message: 'Validasi gagal',
-      errors: errors.array().map(e => ({ field: e.path, message: e.msg })),
+function validate(schema, property = 'body') {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req[property], {
+      abortEarly: false,
+      stripUnknown: true
     })
+
+    if (error) {
+      error.isJoi = true
+      return next(error)
+    }
+
+    req[property] = value
+    next()
   }
-  next()
 }
 
-module.exports = validate
+export default validate
