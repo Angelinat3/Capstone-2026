@@ -16,6 +16,7 @@ import LaporanPage      from './pages/LaporanPage'
 import RekomendasiPage  from './pages/RekomendasiPage'
 import PrediksiPage     from './pages/PrediksiPage'
 import ProfilPage       from './pages/ProfilPage'
+import SettingsPage     from './pages/SettingsPage'
 
 const P = ({ children }) => <ProtectedRoute>{children}</ProtectedRoute>
 
@@ -35,6 +36,7 @@ function AnimatedRoutes() {
         <Route path="/rekomendasi"   element={<P><RekomendasiPage /></P>} />
         <Route path="/prediksi"      element={<P><PrediksiPage /></P>} />
         <Route path="/profil"        element={<P><ProfilPage /></P>} />
+        <Route path="/settings"      element={<P><SettingsPage /></P>} />
         <Route path="*"              element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>

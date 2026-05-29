@@ -29,6 +29,30 @@
    ```
    The backend server will run at **http://localhost:3000**.
 
+### Local OCR Service Setup
+
+The backend can proxy receipt uploads to the bundled PaddleOCR ONNX FastAPI service.
+
+1. Navigate to the OCR service folder:
+   ```bash
+   cd backend/paddleocr-onnx-api
+   ```
+2. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Start the OCR service:
+   ```bash
+   uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+   ```
+4. In `backend/.env`, use:
+   ```env
+   AI_PROVIDER=fastapi
+   AI_SERVICE_URL=http://localhost:8000
+   ```
+
+The frontend still uploads receipts to the Express backend at `/ocr/upload`; Express forwards the image to the local OCR endpoint `/ocr/receipt`.
+
 ### Frontend Setup
 
 1. Navigate to the frontend folder:

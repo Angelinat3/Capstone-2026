@@ -16,7 +16,7 @@ export const PORT = process.env.PORT || 3000
 export const DATABASE_URL = process.env.DATABASE_URL
 export const JWT_SECRET = process.env.JWT_SECRET
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
-export const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000'
+export const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://dompetkuyai-production.up.railway.app'
 export const AI_SERVICE_TIMEOUT =
   parseInt(process.env.AI_SERVICE_TIMEOUT, 10) || 30000
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY

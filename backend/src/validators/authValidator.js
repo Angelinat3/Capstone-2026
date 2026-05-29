@@ -42,6 +42,12 @@ const updateMeSchema = Joi.object({
   name: Joi.string().trim().min(1).optional().messages({
     'string.empty': 'Nama tidak boleh kosong'
   }),
+  email: Joi.string().email().optional().messages({
+    'string.email': 'Email tidak valid'
+  }),
+  password: Joi.string().min(6).optional().messages({
+    'string.min': 'Password minimal 6 karakter'
+  }),
   accounts: Joi.alternatives().try(
     Joi.object(),
     Joi.array(),

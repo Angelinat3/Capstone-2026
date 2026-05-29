@@ -40,8 +40,21 @@ async function extractTransaction(text) {
   
   // Use FastAPI endpoint dari tim AI (AI_SERVICE_URL)
   try {
-    const res = await aiClient.post('/ai/extract-transaction', { text })
-    return res.data
+    const res = await aiClient.post('/extract-transactions', { text })
+    const data = res.data
+    if (data && data.transactions && data.transactions.length > 0) {
+      const first = data.transactions[0]
+      return {
+        amount: first.amount,
+        category: first.category || 'lainnya',
+        merchant: first.merchant || 'Unknown',
+        payMethod: first.pay_method || 'cash',
+        note: first.note || text,
+        type: first.type === 'income' ? 'income' : 'expense',
+        confidence: first.confidence || 0.8
+      }
+    }
+    throw new Error('Gagal mengekstrak data dari teks (FastAPI response kosong)')
   } catch (err) {
     if (err.response) {
       throw new Error(`AI Service error: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
@@ -56,12 +69,11 @@ async function extractTransaction(text) {
   }
 }
 
-// POST /ai/ocr-invoice
+// POST /ocr/receipt
 // ================================================================
-// TODO — AI ENGINEER (Tim AI):
-// Endpoint untuk OCR invoice via FastAPI:
-//   POST /ai/ocr-invoice
-//   Body: multipart/form-data dengan field 'invoice'
+// PaddleOCR ONNX FastAPI service:
+//   POST /ocr/receipt
+//   Body: multipart/form-data dengan field 'file'
 //   Response: { total, merchant, category, date, items, confidence }
 // ================================================================
 async function ocrInvoice(fileBuffer, filename, mimetype) {
@@ -76,9 +88,9 @@ async function ocrInvoice(fileBuffer, filename, mimetype) {
   // Use FastAPI endpoint dari tim AI
   try {
     const form = new FormData()
-    form.append('invoice', fileBuffer, { filename, contentType: mimetype })
+    form.append('file', fileBuffer, { filename, contentType: mimetype })
 
-    const res = await aiClient.post('/ai/ocr-invoice', form, {
+    const res = await aiClient.post('/ocr/receipt', form, {
       headers: form.getHeaders(),
       timeout: 60000,
     })
@@ -97,13 +109,12 @@ async function ocrInvoice(fileBuffer, filename, mimetype) {
   }
 }
 
-// POST /ai/recommendations
+// POST /predict
 // ================================================================
-// TODO — AI ENGINEER (Tim AI):
 // Endpoint untuk rekomendasi keuangan via FastAPI:
-//   POST /ai/recommendations
+//   POST /predict
 //   Body: { transactions: Array }
-//   Response: Array of { type, title, message, category, savingEstimate }
+//   Response: { recommendations: Array of { type, icon, title, message, category, saving_estimate, id } }
 // ================================================================
 async function getRecommendations(transactions, timeout = 60000) {
   const provider = getAIProvider()
@@ -116,8 +127,29 @@ async function getRecommendations(transactions, timeout = 60000) {
   
   // Use FastAPI endpoint dari tim AI
   try {
-    const res = await aiClient.post('/ai/recommendations', { transactions }, { timeout })
-    return res.data
+    const mappedTransactions = transactions.map(t => ({
+      user_id: t.userId || 'string',
+      tanggal: t.date instanceof Date ? t.date.toISOString().split('T')[0] : new Date(t.date).toISOString().split('T')[0],
+      kategori: t.category || 'lainnya',
+      jumlah: typeof t.amount === 'number' ? t.amount : Number(t.amount) || 0,
+      jenis: t.type || 'expense',
+      metode_pembayaran: t.payMethod || 'cash',
+      profil_user: 'unknown',
+      merchant: t.merchant || 'unknown',
+      lokasi: 'unknown'
+    }))
+
+    const res = await aiClient.post('/predict', { transactions: mappedTransactions }, { timeout })
+    const recs = res.data.recommendations || []
+    return recs.map(rec => ({
+      id: rec.id || String(Math.random()),
+      type: rec.type || 'tip',
+      icon: rec.icon || '💡',
+      title: rec.title || '',
+      message: rec.message || '',
+      category: rec.category || '',
+      savingEstimate: rec.saving_estimate || 0
+    }))
   } catch (err) {
     if (err.response) {
       throw new Error(`AI Service error: ${err.response.status} - ${JSON.stringify(err.response.data)}`)

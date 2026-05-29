@@ -91,7 +91,7 @@ export const forgotPassword = async (req, res, next) => {
 // PUT /auth/me
 export const updateMe = async (req, res, next) => {
   try {
-    const { name, accounts } = req.body
+    const { name, email, password, accounts } = req.body
 
     const data = {}
     if (name !== undefined) {
@@ -99,6 +99,22 @@ export const updateMe = async (req, res, next) => {
         throw new InvariantError('Nama tidak valid')
       }
       data.name = name.trim()
+    }
+    if (email !== undefined) {
+      if (typeof email !== 'string' || !email.includes('@')) {
+        throw new InvariantError('Email tidak valid')
+      }
+      const existing = await userRepository.findByEmail(email)
+      if (existing && existing.id !== req.user.id) {
+        throw new InvariantError('Email sudah terdaftar')
+      }
+      data.email = email.trim()
+    }
+    if (password !== undefined) {
+      if (typeof password !== 'string' || password.length < 6) {
+        throw new InvariantError('Password minimal 6 karakter')
+      }
+      data.password = await bcrypt.hash(password, 12)
     }
     if (accounts !== undefined) {
       if (accounts !== null && typeof accounts !== 'object') {

@@ -62,6 +62,13 @@ const transactionRepository = {
     return result
   },
 
+  async deleteAll(userId) {
+    const result = await prisma.transaction.deleteMany({
+      where: { userId }
+    })
+    return result
+  },
+
   async findByDateRange(userId, startDate, endDate) {
     const where = { userId }
     if (startDate && endDate) {

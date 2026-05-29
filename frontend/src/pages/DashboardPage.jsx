@@ -4,7 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { TrendingUp, TrendingDown, ArrowRight, Settings, Moon, Sun, Eye, EyeOff, BarChart3, Camera, ShoppingCart, Package } from 'lucide-react'
 import Layout from '../components/Layout'
 import { getTransactionsAPI } from '../services/transactionService'
-import { MONTHLY_CHART_DATA, CATEGORY_CHART_DATA, CATEGORIES } from '../utils/dummyData'
+import { CATEGORIES } from '../utils/dummyData'
 import { formatRupiah, formatTanggalPendek, getCategoryInfo } from '../utils/helpers'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -63,6 +63,62 @@ export default function DashboardPage() {
   }, [user])
 
   const recentTx = transactions.slice(0, 5)
+
+  // Generate dynamic 6-month trend chart data
+  const monthlyChartData = (() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
+    const list = []
+    const now = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const year = d.getFullYear()
+      const month = d.getMonth()
+      const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`
+      list.push({
+        bulan: monthNames[month],
+        monthKey,
+        pemasukan: 0,
+        pengeluaran: 0
+      })
+    }
+
+    transactions.forEach(tx => {
+      if (!tx.date) return
+      const match = tx.date.match(/^(\d{4}-\d{2})/)
+      if (!match) return
+      const key = match[1]
+      const target = list.find(item => item.monthKey === key)
+      if (target) {
+        const amount = parseFloat(tx.amount) || 0
+        if (tx.type === 'income') {
+          target.pemasukan += amount
+        } else {
+          target.pengeluaran += amount
+        }
+      }
+    })
+    return list
+  })()
+
+  // Generate dynamic category chart data (expenses)
+  const categoryChartData = (() => {
+    const expenses = transactions.filter(t => t.type === 'expense')
+    const grouped = {}
+    expenses.forEach(t => {
+      const catInfo = CATEGORIES.find(c => c.id === t.category) || CATEGORIES.find(c => c.id === 'lainnya')
+      const catLabel = catInfo ? catInfo.label.split(' ')[0] : 'Lainnya'
+      const amount = parseFloat(t.amount) || 0
+      if (!grouped[catLabel]) {
+        grouped[catLabel] = {
+          name: catLabel,
+          value: 0,
+          color: catInfo ? catInfo.color : '#6b7280'
+        }
+      }
+      grouped[catLabel].value += amount
+    })
+    return Object.values(grouped).sort((a, b) => b.value - a.value)
+  })()
 
   return (
     <Layout>
@@ -137,12 +193,12 @@ export default function DashboardPage() {
 
       {/* ── QUICK MENU ── */}
       <div className="px-5 mt-5">
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { icon: null,  isRobot: true,  label: 'AI Dompetkuy', to: '/transaksi' },
             { icon: BarChart3, isRobot: false, label: 'Laporan',     to: '/laporan'   },
             { icon: Camera,   isRobot: false, label: 'Upload Foto', to: '/transaksi' },
-            { icon: ShoppingCart, isRobot: false, label: 'Sembako',     to: '/prediksi'  },
+            // { icon: ShoppingCart, isRobot: false, label: 'Sembako',     to: '/prediksi'  },
           ].map(m => (
             <motion.div key={m.label} whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}>
               <Link to={m.to}
@@ -172,7 +228,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={160}>
-            <AreaChart data={MONTHLY_CHART_DATA}>
+            <AreaChart data={monthlyChartData}>
               <defs>
                 <linearGradient id="inc2" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.15} />
@@ -218,31 +274,37 @@ export default function DashboardPage() {
           <Link to="/laporan" className="text-primary-600 text-xs font-semibold">Laporan →</Link>
         </div>
         <div className="space-y-2">
-          {CATEGORY_CHART_DATA.slice(0,4).map(c => {
-            const total = CATEGORY_CHART_DATA.reduce((s,x) => s+x.value, 0)
-            const pct = Math.round((c.value/total)*100)
-            return (
-              <div key={c.name} className="bg-white dark:bg-zinc-800 rounded-2xl p-3.5 flex items-center gap-3 border border-zinc-50 dark:border-zinc-700">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: c.color+'18' }}>
-                  {(() => {
-                    const cat = CATEGORIES.find(x => x.label.startsWith(c.name))
-                    const Icon = cat?.icon || Package
-                    return <Icon size={18} style={{ color: c.color }} />
-                  })()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{c.name}</span>
-                    <span className="text-xs font-bold text-zinc-800 dark:text-white">{formatRupiah(c.value)}</span>
+          {categoryChartData.length === 0 ? (
+            <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 text-center border border-zinc-50 dark:border-zinc-700 text-xs text-zinc-400">
+              Belum ada data pengeluaran
+            </div>
+          ) : (
+            categoryChartData.slice(0, 4).map(c => {
+              const total = categoryChartData.reduce((s, x) => s + x.value, 0)
+              const pct = total > 0 ? Math.round((c.value / total) * 100) : 0
+              return (
+                <div key={c.name} className="bg-white dark:bg-zinc-800 rounded-2xl p-3.5 flex items-center gap-3 border border-zinc-50 dark:border-zinc-700">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: c.color + '18' }}>
+                    {(() => {
+                      const cat = CATEGORIES.find(x => x.label.startsWith(c.name))
+                      const Icon = cat?.icon || Package
+                      return <Icon size={18} style={{ color: c.color }} />
+                    })()}
                   </div>
-                  <div className="h-1.5 bg-zinc-100 dark:bg-zinc-700 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width:`${pct}%`, background:c.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{c.name}</span>
+                      <span className="text-xs font-bold text-zinc-800 dark:text-white">{formatRupiah(c.value)}</span>
+                    </div>
+                    <div className="h-1.5 bg-zinc-100 dark:bg-zinc-700 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.color }} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
       </div>
 

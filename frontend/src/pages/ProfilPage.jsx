@@ -241,7 +241,7 @@ export default function ProfilPage() {
             <p className="text-xs font-bold text-zinc-400 dark:text-zinc-500 mb-2 px-1 tracking-wide">AKUN</p>
             <div className="space-y-2">
               <motion.div variants={staggerItem}>
-                <MenuItem icon={User} label="Edit Profil" sub="Ubah nama, email, foto" onClick={() => setEditName(true)} />
+                <MenuItem icon={User} label="Settings" sub="Kelola profil, rekening, dan password" onClick={() => navigate('/settings')} />
               </motion.div>
               <motion.div variants={staggerItem}>
                 <MenuItem icon={CreditCard} label="Kelola Rekening" sub="Setup saldo & metode pembayaran" onClick={() => navigate('/setup-saldo')} />
