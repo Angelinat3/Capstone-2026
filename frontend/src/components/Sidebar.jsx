@@ -18,8 +18,10 @@ export default function Sidebar() {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
+    navigate('/login', { replace: true })
+    setTimeout(() => {
+      logout()
+    }, 50)
   }
 
   return (

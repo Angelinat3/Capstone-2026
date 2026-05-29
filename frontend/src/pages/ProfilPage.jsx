@@ -42,8 +42,10 @@ export default function ProfilPage() {
   const [uploading, setUploading] = useState(false)
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
+    navigate('/login', { replace: true })
+    setTimeout(() => {
+      logout()
+    }, 50)
   }
 
   const saveName = () => {
